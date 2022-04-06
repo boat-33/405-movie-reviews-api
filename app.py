@@ -10,10 +10,10 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 ########### Define a few variables ######
 
-tabtitle = 'Movies'
+tabtitle = 'Movie Summary Sentiment'
 sourceurl = 'https://www.kaggle.com/tmdb/tmdb-movie-metadata'
 sourceurl2 = 'https://developers.themoviedb.org/3/getting-started/introduction'
-githublink = 'https://github.com/austinlasseter/tmdb-rf-classifier'
+githublink = 'https://github.com/boat-33/405-movie-reviews-api'
 
 ########### Define sentiment analyzing function ######
 def sentiment_analysis(sentence):
@@ -49,7 +49,7 @@ app.layout = html.Div(children=[
     dcc.Store(id='tmdb-store', storage_type='session'),
     dcc.Store(id='summary-store', storage_type='session'),
     html.Div([
-        html.H1(['Movie Reviews']),
+        html.H1(['Movie Summary Sentiment Analysis']),
         html.Div([
             html.Div([
                 html.Div('Randomly select a movie summary'),
@@ -57,8 +57,6 @@ app.layout = html.Div(children=[
                 html.Div(id='movie-title', children=[]),
                 html.Div(id='movie-release', children=[]),
                 html.Div(id='movie-overview', children=[]),
-                html.Div(id='review-sentiment', children=[])
-
             ], style={ 'padding': '12px',
                     'font-size': '22px',
                     # 'height': '400px',
@@ -68,11 +66,24 @@ app.layout = html.Div(children=[
                     'textAlign': 'left',
                     },
             className='six columns'),
-
         ], className='twelve columns'),
         html.Br(),
 
     ], className='twelve columns'),
+    html.Br(),
+    html.Div([
+        html.H2(['Vader Sentiment']),
+        html.Div(id='review-sentiment', style={ 'padding': '12px',
+                    'font-size': '22px',
+                    # 'height': '400px',
+                    'border': 'thick red solid',
+                    'color': 'rgb(255, 255, 255)',
+                    'backgroundColor': '#536869',
+                    'textAlign': 'left',
+                    'marginLeft': '0',
+                    },
+            className='six columns')
+    ]),
 
 
         # Output
@@ -118,7 +129,7 @@ def on_data(ts, data):
         raise PreventUpdate
     else:
         message=''
-        if len(data['overview']) > 1:
+        if data['overview'] and len(data['overview']) > 1:
             message = sentiment_analysis(data['overview'])
         return data['title'], data['release_date'], data['overview'], message
 
