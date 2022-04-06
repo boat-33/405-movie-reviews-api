@@ -1,9 +1,11 @@
+from email import message
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from helpers.key_finder import api_key
 from helpers.api_call import *
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 
 ########### Define a few variables ######
@@ -12,6 +14,26 @@ tabtitle = 'Movies'
 sourceurl = 'https://www.kaggle.com/tmdb/tmdb-movie-metadata'
 sourceurl2 = 'https://developers.themoviedb.org/3/getting-started/introduction'
 githublink = 'https://github.com/austinlasseter/tmdb-rf-classifier'
+
+########### Define sentiment analyzing function ######
+def sentiment_analysis(sentence):
+    sid = SentimentIntensityAnalyzer()
+
+    sentiment_dict = sid.polarity_scores(sentence)
+
+    # positive score >= 0.05
+    # neutral sentiment: (compound score > -0.05) and (compound score < 0.05)
+    # negative sentiment: compound score <= -0.05
+    compound = sentiment_dict['compound']
+    if compound >= 0.05:
+        sentiment = 'joyful!'
+    elif compound > -0.05:
+        sentiment = 'lacking emotion'
+    else:
+        sentiment = 'terrifyingly negative'
+
+    message=f'According to Vader, this movie is {sentiment}'
+    return message
 
 
 
@@ -35,6 +57,7 @@ app.layout = html.Div(children=[
                 html.Div(id='movie-title', children=[]),
                 html.Div(id='movie-release', children=[]),
                 html.Div(id='movie-overview', children=[]),
+                html.Div(id='review-sentiment', children=[])
 
             ], style={ 'padding': '12px',
                     'font-size': '22px',
@@ -83,9 +106,10 @@ def on_click(n_clicks, data):
         data = api_pull(random.choice(ids_list))
     return data
 
-@app.callback([Output('movie-title', 'children'),
-                Output('movie-release', 'children'),
-                Output('movie-overview', 'children'),
+@app.callback([Output(component_id='movie-title', component_property='children'),
+                Output(component_id='movie-release', component_property='children'),
+                Output(component_id='movie-overview', component_property='children'),
+                Output(component_id='review-sentiment', component_property='children')
                 ],
               [Input('tmdb-store', 'modified_timestamp')],
               [State('tmdb-store', 'data')])
@@ -93,7 +117,10 @@ def on_data(ts, data):
     if ts is None:
         raise PreventUpdate
     else:
-        return data['title'], data['release_date'], data['overview']
+        message=''
+        if len(data['overview']) > 1:
+            message = sentiment_analysis(data['overview'])
+        return data['title'], data['release_date'], data['overview'], message
 
 
 ############ Deploy
